@@ -1,0 +1,24 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VueDotnet.Api", "VueDotnet.Api\VueDotnet.Api.csproj", "{38A70BB4-8EA4-440F-B2A5-1E5B86B61402}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VueDotnet.Api.Tests", "VueDotnet.Api.Tests\VueDotnet.Api.Tests.csproj", "{27C7BE37-C7EB-46A9-BEC2-8D09E1446D07}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{38A70BB4-8EA4-440F-B2A5-1E5B86B61402}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{38A70BB4-8EA4-440F-B2A5-1E5B86B61402}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{38A70BB4-8EA4-440F-B2A5-1E5B86B61402}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{38A70BB4-8EA4-440F-B2A5-1E5B86B61402}.Release|Any CPU.Build.0 = Release|Any CPU
+		{27C7BE37-C7EB-46A9-BEC2-8D09E1446D07}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{27C7BE37-C7EB-46A9-BEC2-8D09E1446D07}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{27C7BE37-C7EB-46A9-BEC2-8D09E1446D07}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{27C7BE37-C7EB-46A9-BEC2-8D09E1446D07}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

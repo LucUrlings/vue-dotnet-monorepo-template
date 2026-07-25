@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+
+# Frontend output
+frontend/dist/
+frontend/coverage/
+
+# .NET output
+**/bin/
+**/obj/
+TestResults/
+
+# Environment and local configuration
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# IDE and operating system
+.DS_Store
+Thumbs.db
+.idea/
+.vs/
+.vscode/*
+!.vscode/extensions.json
+
+# Logs and certificates
+*.log
+*.pfx
+*.p12
+*.cer
+*.key
+*.pem

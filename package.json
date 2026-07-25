@@ -1,0 +1,30 @@
+{
+  "name": "vue-dotnet-monorepo-template",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Root orchestration for the VueDotnet Monorepo template.",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "setup": "node scripts/setup.mjs",
+    "dev": "concurrently --kill-others-on-fail --names frontend,backend --prefix-colors cyan,magenta \"npm --prefix frontend run dev\" \"dotnet watch --project backend/VueDotnet.Api/VueDotnet.Api.csproj --urls http://localhost:5000\"",
+    "build": "concurrently --kill-others-on-fail --names frontend,backend \"npm --prefix frontend run build\" \"dotnet build backend/VueDotnet.sln --configuration Release\"",
+    "test": "concurrently --kill-others-on-fail --names frontend,backend \"npm --prefix frontend run test:run\" \"dotnet test backend/VueDotnet.sln --configuration Release\"",
+    "lint": "npm --prefix frontend run lint && npm --prefix frontend run type-check && dotnet format backend/VueDotnet.sln --verify-no-changes --no-restore",
+    "format": "npm --prefix frontend run format && npm --prefix frontend exec -- prettier --write README.md SECURITY.md AGENTS.md backend/README.md package.json .github docker && dotnet format backend/VueDotnet.sln",
+    "format:check": "npm --prefix frontend run format:check && npm --prefix frontend exec -- prettier --check README.md SECURITY.md AGENTS.md backend/README.md package.json .github docker",
+    "check": "npm run format:check && npm run check:frontend && npm run check:backend",
+    "check:frontend": "npm --prefix frontend run type-check && npm --prefix frontend run lint && npm --prefix frontend run test:run && npm --prefix frontend run build",
+    "check:backend": "dotnet format backend/VueDotnet.sln --verify-no-changes --no-restore && dotnet test backend/VueDotnet.sln --configuration Release --no-restore && dotnet build backend/VueDotnet.sln --configuration Release --no-restore",
+    "docker:dev": "docker compose -f docker/compose.dev.yml up",
+    "docker:dev:build": "docker compose -f docker/compose.dev.yml up --build",
+    "docker:dev:reset": "docker compose -f docker/compose.dev.yml down --volumes --remove-orphans",
+    "docker:server": "docker compose -f docker/compose.server.yml up -d",
+    "docker:server:build": "docker compose -f docker/compose.server.yml -f docker/compose.build.yml up -d --build",
+    "docker:down": "concurrently --success all \"docker compose -f docker/compose.dev.yml down --remove-orphans\" \"docker compose -f docker/compose.server.yml -f docker/compose.build.yml down --remove-orphans\""
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}

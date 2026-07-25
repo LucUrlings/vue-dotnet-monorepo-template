@@ -1,0 +1,14 @@
+services:
+  backend:
+    build:
+      context: ..
+      dockerfile: backend/VueDotnet.Api/Dockerfile
+      target: production
+    pull_policy: build
+
+  frontend:
+    build:
+      context: ..
+      dockerfile: frontend/Dockerfile
+      target: production
+    pull_policy: build

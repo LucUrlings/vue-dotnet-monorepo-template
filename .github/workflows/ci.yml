@@ -1,0 +1,143 @@
+name: CI
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend:
+    name: Frontend
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            frontend/package-lock.json
+      - name: Install root dependencies
+        run: npm ci
+      - name: Install frontend dependencies
+        run: npm ci --prefix frontend
+      - name: Audit npm dependencies
+        run: |
+          npm audit
+          npm audit --prefix frontend
+      - name: Verify repository formatting
+        run: npm run format:check
+      - name: Type-check, lint, test, and build
+        run: npm run check:frontend
+
+  backend:
+    name: Backend
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5
+        with:
+          dotnet-version: 10.0.x
+      - name: Restore dependencies
+        run: dotnet restore backend/VueDotnet.sln --locked-mode
+      - name: Verify formatting
+        run: dotnet format backend/VueDotnet.sln --verify-no-changes --no-restore
+      - name: Test
+        run: dotnet test backend/VueDotnet.sln --configuration Release --no-restore
+      - name: Build
+        run: dotnet build backend/VueDotnet.sln --configuration Release --no-restore
+      - name: Audit NuGet dependencies
+        run: dotnet list backend/VueDotnet.sln package --vulnerable --include-transitive
+
+  containers:
+    name: Containers
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      FRONTEND_IMAGE: local/vue-dotnet-monorepo-frontend
+      BACKEND_IMAGE: local/vue-dotnet-monorepo-backend
+      IMAGE_TAG: ci
+      FRONTEND_PORT: 8080
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+      - name: Validate Compose files
+        run: |
+          docker compose -f docker/compose.dev.yml config --quiet
+          docker compose -f docker/compose.server.yml config --quiet
+          docker compose -f docker/compose.server.yml -f docker/compose.build.yml config --quiet
+          docker compose -f docker/compose.server.yml -f docker/compose.debug.yml config --quiet
+      - name: Build development images
+        run: docker compose -f docker/compose.dev.yml build
+      - name: Build production images
+        run: docker compose -f docker/compose.server.yml -f docker/compose.build.yml build
+      - name: Scan frontend image
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: local/vue-dotnet-monorepo-frontend:ci
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+          format: table
+      - name: Scan backend image
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: local/vue-dotnet-monorepo-backend:ci
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+          format: table
+      - name: Start production stack
+        run: |
+          docker compose \
+            -f docker/compose.server.yml \
+            -f docker/compose.build.yml \
+            up -d --no-build --wait --wait-timeout 90
+      - name: Smoke-test production stack
+        run: |
+          curl --fail --silent --show-error http://127.0.0.1:8080/api/status
+          curl --fail --silent --show-error http://127.0.0.1:8080/about > /dev/null
+          curl --fail --silent --show-error http://127.0.0.1:8080/healthz
+          curl --fail --silent --show-error --head http://127.0.0.1:8080/ |
+            grep --ignore-case --quiet '^x-content-type-options: nosniff'
+
+          backend_container="$(
+            docker compose \
+              -f docker/compose.server.yml \
+              -f docker/compose.build.yml \
+              ps --quiet backend
+          )"
+          test "$(docker inspect --format '{{.Config.User}}' "$backend_container")" = "app"
+          docker inspect "$backend_container" |
+            jq --exit-status '.[0].NetworkSettings.Ports["8080/tcp"] == null'
+
+          docker compose \
+            -f docker/compose.server.yml \
+            -f docker/compose.build.yml \
+            restart backend
+
+          recovered=false
+          for _ in {1..12}; do
+            if curl --max-time 3 --fail --silent \
+              http://127.0.0.1:8080/api/status > /dev/null; then
+              recovered=true
+              break
+            fi
+            sleep 2
+          done
+          test "$recovered" = true
+      - name: Stop production stack
+        if: always()
+        run: |
+          docker compose \
+            -f docker/compose.server.yml \
+            -f docker/compose.build.yml \
+            down --remove-orphans
