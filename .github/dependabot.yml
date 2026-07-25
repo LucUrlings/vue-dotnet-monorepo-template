@@ -13,6 +13,15 @@ updates:
     directory: /frontend
     schedule:
       interval: weekly
+    ignore:
+      # Keep runtime types aligned with the template's Node 24 LTS target.
+      - dependency-name: "@types/node"
+        update-types:
+          - version-update:semver-major
+      # Upgrade TypeScript majors with the lint toolchain after peer support lands.
+      - dependency-name: typescript
+        update-types:
+          - version-update:semver-major
     groups:
       vue:
         patterns:
@@ -30,6 +39,11 @@ updates:
     directory: /backend
     schedule:
       interval: weekly
+    ignore:
+      # ASP.NET Core 10's OpenAPI generator currently requires the 2.x API.
+      - dependency-name: Microsoft.OpenApi
+        update-types:
+          - version-update:semver-major
     groups:
       dotnet:
         patterns:
@@ -51,6 +65,11 @@ updates:
     directory: /frontend
     schedule:
       interval: weekly
+    ignore:
+      # Node major upgrades are an explicit template/toolchain decision.
+      - dependency-name: node
+        update-types:
+          - version-update:semver-major
 
   - package-ecosystem: docker
     directory: /backend/VueDotnet.Api
