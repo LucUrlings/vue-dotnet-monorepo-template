@@ -12,7 +12,7 @@ CMD ["npm", "run", "dev"]
 FROM development AS build
 RUN npm run build
 
-FROM nginx:stable-alpine3.24@sha256:97d490c12ba55b4946b01546d1c3ed324e8d41ab1c9fcb2a616aa470620e5b46 AS production
+FROM nginx:stable-alpine3.24@sha256:dc5069ad14f19660b141b21236140b91656bf89bbc3e2417c70ae650cd66104c AS production
 COPY frontend/nginx.conf /etc/nginx/conf.d/default.conf
 COPY frontend/nginx-security-headers.conf /etc/nginx/security-headers.conf
 COPY --from=build /app/dist /usr/share/nginx/html
